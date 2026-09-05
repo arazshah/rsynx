@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - target: bun-linux-x64
+            asset: rsynx-linux-x64
+          - target: bun-linux-arm64
+            asset: rsynx-linux-arm64
+          - target: bun-darwin-x64
+            asset: rsynx-darwin-x64
+          - target: bun-darwin-arm64
+            asset: rsynx-darwin-arm64
+          - target: bun-windows-x64
+            asset: rsynx-windows-x64.exe
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - name: Compile ${{ matrix.target }} binary
+        working-directory: apps/cli
+        run: bun build --compile --minify --target=${{ matrix.target }} src/index.ts --outfile ../../dist/${{ matrix.asset }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: dist/${{ matrix.asset }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
