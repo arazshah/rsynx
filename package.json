@@ -8,5 +8,9 @@
     "build:cli": "bun run --cwd apps/cli build",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.1",
+    "typescript": "^7.0.2"
   }
 }
