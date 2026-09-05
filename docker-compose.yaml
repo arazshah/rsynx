@@ -6,5 +6,6 @@ services:
     restart: unless-stopped
     environment:
       PORT: "3000"
+      GLIBC_TUNABLES: "glibc.cpu.hwcaps=-AVX2,-AVX,-AVX512F,-ERMS,-SSE4_2,-SSE4_1,-SSSE3"
     expose:
       - "3000"
