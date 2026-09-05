@@ -1,9 +1,21 @@
 import { Terminal } from "@xterm/headless";
-import { encryptMessage, type UserMessage } from "@rsynx/protocol";
+import {
+  DecryptionError,
+  decryptMessage,
+  encryptMessage,
+  type EncryptedEnvelope,
+  type UserMessage,
+} from "@rsynx/protocol";
+import { ChatController } from "../chat";
 import type { RelayClient, RelayClientEvents } from "../relay-client";
 import { createTui } from "../tui";
 
-const QUIT_BYTE = 0x1d; // Ctrl+] — classic telnet/rlogin escape convention, unlikely to collide with shell usage.
+function isType<T extends UserMessage["type"]>(
+  message: unknown,
+  type: T,
+): message is Extract<UserMessage, { type: T }> {
+  return typeof message === "object" && message !== null && (message as { type?: unknown }).type === type;
+}
 
 export async function runHostSession(params: {
   sessionId: string;
@@ -15,15 +27,23 @@ export async function runHostSession(params: {
 
   const tui = createTui();
   const xterm = new Terminal({ cols: tui.cols, rows: tui.rows, allowProposedApi: true });
+  const chat = new ChatController();
   let guestConnected = true;
 
   function updateStatus(): void {
     tui.setStatus(
-      ` rsynx host  |  session ${sessionId}  |  guest: ${guestConnected ? "connected" : "gone"}  |  Ctrl+] quit `,
+      ` rsynx host  |  session ${sessionId}  |  guest: ${guestConnected ? "connected" : "gone"}  |  Ctrl+T chat${chat.isOpen() ? " [OPEN]" : ""}  |  Ctrl+] quit `,
     );
   }
   updateStatus();
   tui.repaint(xterm);
+
+  function repaintChat(): void {
+    tui.setChatContent(chat.renderContent());
+    if (chat.isOpen()) tui.showChat();
+    else tui.hideChat();
+    updateStatus();
+  }
 
   // Serializes async output handling so terminal-data chunks reach the guest in order.
   let chain: Promise<void> = Promise.resolve();
@@ -70,12 +90,25 @@ export async function runHostSession(params: {
   }
 
   tui.onRawInput((chunk) => {
-    if (chunk.length === 1 && chunk[0] === QUIT_BYTE) {
+    const result = chat.handleChunk(chunk, async (text) => {
+      const message: UserMessage = { type: "chat-message", payload: { text, from: "host" } };
+      const envelope = await encryptMessage(key, message);
+      client.sendUserEnvelope({
+        level: "user",
+        session_id: sessionId,
+        timestamp: new Date().toISOString(),
+        ...envelope,
+      });
+    });
+    repaintChat();
+
+    if (result.quit) {
       terminal.close();
       shutdown();
       return;
     }
-    terminal.write(chunk);
+
+    if (result.passthrough.length > 0) terminal.write(result.passthrough);
   });
 
   tui.onResize((cols, rows) => {
@@ -88,7 +121,20 @@ export async function runHostSession(params: {
     guestConnected = false;
     updateStatus();
   };
-  events.onUserEnvelope = undefined;
+  events.onUserEnvelope = async (envelope) => {
+    let message: unknown;
+    try {
+      message = await decryptMessage(key, envelope as unknown as EncryptedEnvelope);
+    } catch (error) {
+      if (error instanceof DecryptionError) return;
+      throw error;
+    }
+
+    if (isType(message, "chat-message")) {
+      chat.receiveMessage(message.payload.text);
+      repaintChat();
+    }
+  };
   events.onSessionExpired = (reason) => {
     tui.setStatus(` Session expired: ${reason} `);
     tui.repaint(xterm);
