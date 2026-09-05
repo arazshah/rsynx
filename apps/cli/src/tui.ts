@@ -1,9 +1,16 @@
-import * as blessed from "neo-blessed";
+// Imported directly from their widget files (not the "neo-blessed" package
+// root) so the build only needs the two widgets actually used. Going through
+// the package root pulls in lib/widget.js, which eagerly `require()`s every
+// widget — including terminal.js and image.js, whose optional native deps
+// (term.js, pty.js) aren't installed and don't need to be.
+import Screen from "neo-blessed/lib/widgets/screen.js";
+import Box from "neo-blessed/lib/widgets/box.js";
+import type { Widgets } from "neo-blessed";
 import type { Terminal } from "@xterm/headless";
 import { renderBuffer } from "./terminal-view";
 
 export interface Tui {
-  screen: blessed.Widgets.Screen;
+  screen: Widgets.Screen;
   /** Usable size of the terminal viewport (screen size minus the 1-row status bar). */
   cols: number;
   rows: number;
@@ -25,9 +32,9 @@ export function createTui(): Tui {
   // "data" listener never receives bytes even though it's attached correctly.
   process.stdin.resume();
 
-  const screen = blessed.screen({ smartCSR: true, title: "rsynx" });
+  const screen = Screen({ smartCSR: true, title: "rsynx" });
 
-  const terminalBox = blessed.box({
+  const terminalBox = Box({
     top: 0,
     left: 0,
     width: "100%",
@@ -36,7 +43,7 @@ export function createTui(): Tui {
     style: { fg: "default", bg: "default" },
   });
 
-  const statusBar = blessed.box({
+  const statusBar = Box({
     top: "100%-1",
     left: 0,
     width: "100%",
@@ -45,7 +52,7 @@ export function createTui(): Tui {
     style: { fg: "black", bg: "white" },
   });
 
-  const chatBox = blessed.box({
+  const chatBox = Box({
     top: "60%-1",
     left: "50%",
     width: "50%",
