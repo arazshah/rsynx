@@ -10,6 +10,8 @@ import { ChatController } from "../chat";
 import type { RelayClient, RelayClientEvents } from "../relay-client";
 import { createTui } from "../tui";
 
+const CONTROL_REQUEST_BYTE = 0x12; // Ctrl+R — requests control from the host.
+
 function isType<T extends UserMessage["type"]>(
   message: unknown,
   type: T,
@@ -31,10 +33,22 @@ export async function runGuestSession(params: {
   const xterm = new Terminal({ cols: initialCols, rows: initialRows, allowProposedApi: true });
   const chat = new ChatController();
   let hostConnected = true;
+  let hasControl = false;
+
+  async function sendUserMessage(message: UserMessage): Promise<void> {
+    const envelope = await encryptMessage(key, message);
+    client.sendUserEnvelope({
+      level: "user",
+      session_id: sessionId,
+      timestamp: new Date().toISOString(),
+      ...envelope,
+    });
+  }
 
   function updateStatus(): void {
+    const controlText = hasControl ? "you have control" : "Ctrl+R request control";
     tui.setStatus(
-      ` rsynx guest  |  session ${sessionId}  |  host: ${hostConnected ? "connected" : "gone"}  |  Ctrl+T chat${chat.isOpen() ? " [OPEN]" : ""}  |  Ctrl+] quit `,
+      ` rsynx guest  |  session ${sessionId}  |  host: ${hostConnected ? "connected" : "gone"}  |  ${controlText}  |  Ctrl+T chat${chat.isOpen() ? " [OPEN]" : ""}  |  Ctrl+] quit `,
     );
   }
   updateStatus();
@@ -55,6 +69,7 @@ export async function runGuestSession(params: {
 
   events.onPeerLeft = () => {
     hostConnected = false;
+    hasControl = false;
     updateStatus();
   };
   events.onSessionExpired = (reason) => {
@@ -93,19 +108,24 @@ export async function runGuestSession(params: {
     if (isType(message, "chat-message")) {
       chat.receiveMessage(message.payload.text);
       repaintChat();
+      return;
+    }
+
+    if (isType(message, "control-grant")) {
+      hasControl = true;
+      updateStatus();
+      return;
+    }
+
+    if (isType(message, "control-revoke")) {
+      hasControl = false;
+      updateStatus();
     }
   };
 
   tui.onRawInput((chunk) => {
-    const result = chat.handleChunk(chunk, async (text) => {
-      const message: UserMessage = { type: "chat-message", payload: { text, from: "guest" } };
-      const envelope = await encryptMessage(key, message);
-      client.sendUserEnvelope({
-        level: "user",
-        session_id: sessionId,
-        timestamp: new Date().toISOString(),
-        ...envelope,
-      });
+    const result = chat.handleChunk(chunk, (text) => {
+      void sendUserMessage({ type: "chat-message", payload: { text, from: "guest" } });
     });
     repaintChat();
 
@@ -114,7 +134,21 @@ export async function runGuestSession(params: {
       return;
     }
 
-    // Non-consumed keystrokes are not forwarded to the host's pty yet — control transfer lands in 7.7.
+    if (result.passthrough.length === 0) return;
+
+    if (!hasControl) {
+      if (result.passthrough.includes(CONTROL_REQUEST_BYTE)) {
+        void sendUserMessage({ type: "control-request", payload: {} });
+      }
+      return;
+    }
+
+    const bytes = result.passthrough.includes(CONTROL_REQUEST_BYTE)
+      ? Buffer.from([...result.passthrough].filter((byte) => byte !== CONTROL_REQUEST_BYTE))
+      : result.passthrough;
+    if (bytes.length > 0) {
+      void sendUserMessage({ type: "keystroke", payload: { data: bytes.toString("base64") } });
+    }
   });
 
   await new Promise<void>((resolve) => {

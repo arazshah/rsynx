@@ -10,6 +10,8 @@ import { ChatController } from "../chat";
 import type { RelayClient, RelayClientEvents } from "../relay-client";
 import { createTui } from "../tui";
 
+const CONTROL_REVOKE_BYTE = 0x07; // Ctrl+G — docs/SPEC.md §7 default instant-revoke hotkey.
+
 function isType<T extends UserMessage["type"]>(
   message: unknown,
   type: T,
@@ -29,10 +31,27 @@ export async function runHostSession(params: {
   const xterm = new Terminal({ cols: tui.cols, rows: tui.rows, allowProposedApi: true });
   const chat = new ChatController();
   let guestConnected = true;
+  let guestHasControl = false;
+  let pendingControlRequest = false;
+
+  async function sendUserMessage(message: UserMessage): Promise<void> {
+    const envelope = await encryptMessage(key, message);
+    client.sendUserEnvelope({
+      level: "user",
+      session_id: sessionId,
+      timestamp: new Date().toISOString(),
+      ...envelope,
+    });
+  }
 
   function updateStatus(): void {
+    const controlText = pendingControlRequest
+      ? "guest requests control [Y/n]"
+      : guestHasControl
+        ? "guest has control (Ctrl+G to revoke)"
+        : "you have control";
     tui.setStatus(
-      ` rsynx host  |  session ${sessionId}  |  guest: ${guestConnected ? "connected" : "gone"}  |  Ctrl+T chat${chat.isOpen() ? " [OPEN]" : ""}  |  Ctrl+] quit `,
+      ` rsynx host  |  session ${sessionId}  |  guest: ${guestConnected ? "connected" : "gone"}  |  ${controlText}  |  Ctrl+T chat${chat.isOpen() ? " [OPEN]" : ""}  |  Ctrl+] quit `,
     );
   }
   updateStatus();
@@ -75,30 +94,26 @@ export async function runHostSession(params: {
     tui.repaint(xterm);
 
     if (guestConnected) {
-      const message: UserMessage = {
+      await sendUserMessage({
         type: "terminal-data",
         payload: { chunk: Buffer.from(data).toString("base64") },
-      };
-      const envelope = await encryptMessage(key, message);
-      client.sendUserEnvelope({
-        level: "user",
-        session_id: sessionId,
-        timestamp: new Date().toISOString(),
-        ...envelope,
       });
     }
   }
 
   tui.onRawInput((chunk) => {
-    const result = chat.handleChunk(chunk, async (text) => {
-      const message: UserMessage = { type: "chat-message", payload: { text, from: "host" } };
-      const envelope = await encryptMessage(key, message);
-      client.sendUserEnvelope({
-        level: "user",
-        session_id: sessionId,
-        timestamp: new Date().toISOString(),
-        ...envelope,
-      });
+    if (pendingControlRequest) {
+      pendingControlRequest = false;
+      const answer = chunk[0];
+      const accepted = answer !== 0x6e && answer !== 0x4e; // anything but 'n'/'N' accepts, matching join-request UX
+      guestHasControl = accepted;
+      updateStatus();
+      if (accepted) void sendUserMessage({ type: "control-grant", payload: {} });
+      return;
+    }
+
+    const result = chat.handleChunk(chunk, (text) => {
+      void sendUserMessage({ type: "chat-message", payload: { text, from: "host" } });
     });
     repaintChat();
 
@@ -108,7 +123,17 @@ export async function runHostSession(params: {
       return;
     }
 
-    if (result.passthrough.length > 0) terminal.write(result.passthrough);
+    let bytes = result.passthrough;
+    if (bytes.includes(CONTROL_REVOKE_BYTE)) {
+      bytes = Buffer.from([...bytes].filter((byte) => byte !== CONTROL_REVOKE_BYTE));
+      if (guestHasControl) {
+        guestHasControl = false;
+        updateStatus();
+        void sendUserMessage({ type: "control-revoke", payload: {} });
+      }
+    }
+
+    if (bytes.length > 0) terminal.write(bytes);
   });
 
   tui.onResize((cols, rows) => {
@@ -119,6 +144,8 @@ export async function runHostSession(params: {
 
   events.onPeerLeft = () => {
     guestConnected = false;
+    guestHasControl = false;
+    pendingControlRequest = false;
     updateStatus();
   };
   events.onUserEnvelope = async (envelope) => {
@@ -133,6 +160,20 @@ export async function runHostSession(params: {
     if (isType(message, "chat-message")) {
       chat.receiveMessage(message.payload.text);
       repaintChat();
+      return;
+    }
+
+    if (isType(message, "control-request")) {
+      if (guestHasControl || pendingControlRequest) return;
+      pendingControlRequest = true;
+      updateStatus();
+      return;
+    }
+
+    if (isType(message, "keystroke")) {
+      // Independently verified here, not just trusted from the guest (docs/SPEC.md §7).
+      if (!guestHasControl) return;
+      terminal.write(Buffer.from(message.payload.data, "base64"));
     }
   };
   events.onSessionExpired = (reason) => {
