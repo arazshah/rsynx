@@ -9,6 +9,13 @@
         "typescript": "^7.0.2",
       },
     },
+    "apps/relay": {
+      "name": "@rsynx/relay",
+      "version": "0.1.0",
+      "dependencies": {
+        "@rsynx/protocol": "workspace:*",
+      },
+    },
     "packages/protocol": {
       "name": "@rsynx/protocol",
       "version": "0.1.0",
@@ -16,6 +23,8 @@
   },
   "packages": {
     "@rsynx/protocol": ["@rsynx/protocol@workspace:packages/protocol"],
+
+    "@rsynx/relay": ["@rsynx/relay@workspace:apps/relay"],
 
     "@types/bun": ["@types/bun@1.4.1", "https://mirror.abrha.net/repository/npm/@types/bun/-/bun-1.4.1.tgz", { "dependencies": { "bun-types": "1.4.1" } }, "sha512-0AVGiTXGajf1rgKom3N+c5L7CBxuoyyv1i44M0nX4UDK0G/fnRAMiri93nHuVPIb429KKtAgj7HatVmmOjeQLA=="],
 
