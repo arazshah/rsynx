@@ -31,6 +31,10 @@
         "@rsynx/protocol": "workspace:*",
       },
     },
+    "apps/web": {
+      "name": "@rsynx/web",
+      "version": "0.1.0",
+    },
     "packages/protocol": {
       "name": "@rsynx/protocol",
       "version": "0.1.0",
@@ -42,6 +46,8 @@
     "@rsynx/protocol": ["@rsynx/protocol@workspace:packages/protocol"],
 
     "@rsynx/relay": ["@rsynx/relay@workspace:apps/relay"],
+
+    "@rsynx/web": ["@rsynx/web@workspace:apps/web"],
 
     "@types/blessed": ["@types/blessed@0.1.27", "https://mirror.abrha.net/repository/npm/@types/blessed/-/blessed-0.1.27.tgz", { "dependencies": { "@types/node": "*" } }, "sha512-ZOQGjLvWDclAXp0rW5iuUBXeD6Gr1PkitN7tj7/G8FCoSzTsij6OhXusOzMKhwrZ9YlL2Pmu0d6xJ9zVvk+Hsg=="],
 

@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>rsynx — اشتراک‌گذاری زندهٔ ترمینال</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0f0e;
+        --surface: #121715;
+        --border: #1f2b27;
+        --text: #e6f1ec;
+        --muted: #8ea89d;
+        --accent: #39d98a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: ui-monospace, "SF Mono", "Cascadia Code", "Liberation Mono", monospace;
+        line-height: 1.7;
+      }
+      header,
+      main,
+      footer {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+      nav {
+        display: flex;
+        gap: 24px;
+        padding: 24px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      nav a {
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 14px;
+      }
+      nav a:hover {
+        color: var(--accent);
+      }
+      h1 {
+        font-size: 40px;
+        margin: 48px 0 8px;
+      }
+      .pitch {
+        color: var(--muted);
+        font-size: 18px;
+        margin: 0 0 32px;
+      }
+      pre {
+        direction: ltr;
+        text-align: left;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px 20px;
+        overflow-x: auto;
+        color: var(--accent);
+        font-size: 15px;
+      }
+      section {
+        margin: 56px 0;
+      }
+      section h2 {
+        font-size: 22px;
+        border-inline-start: 3px solid var(--accent);
+        padding-inline-start: 12px;
+      }
+      .steps {
+        list-style: none;
+        padding: 0;
+        margin: 24px 0 0;
+        display: grid;
+        gap: 16px;
+      }
+      .steps li {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px 20px;
+      }
+      .steps code {
+        direction: ltr;
+        display: inline-block;
+        color: var(--accent);
+      }
+      footer {
+        border-top: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 14px;
+        padding: 24px;
+        margin-top: 64px;
+      }
+      footer a {
+        color: var(--muted);
+      }
+      a.github-link {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a href="#how-it-works">نحوهٔ کار</a>
+        <a href="#install">نصب</a>
+        <a href="https://github.com/arazshah/rsynx" class="github-link">گیت‌هاب</a>
+      </nav>
+      <h1>rsynx</h1>
+      <p class="pitch">
+        اشتراک‌گذاری زندهٔ ترمینال بین دو نفر — بدون SSH، بدون IP عمومی، بدون تنظیم فایروال.
+      </p>
+    </header>
+    <main>
+      <section id="install">
+        <h2>نصب</h2>
+        <pre><code>curl -fsSL https://rsynx.ir/i | sh</code></pre>
+        <p>
+          کاربران ویندوز می‌توانند باینری مناسب را دستی از
+          <a href="https://github.com/arazshah/rsynx/releases" class="github-link">صفحهٔ Releases</a>
+          دانلود کنند.
+        </p>
+      </section>
+      <section id="how-it-works">
+        <h2>نحوهٔ کار</h2>
+        <ul class="steps">
+          <li>
+            میزبان یک نشست جدید می‌سازد: <code>rsynx host</code> — یک کد شش‌رقمی و یک رمز عبور
+            چهار کاراکتری نمایش داده می‌شود.
+          </li>
+          <li>
+            مهمان با همان کد وصل می‌شود: <code>rsynx join &lt;code&gt;</code> و رمز عبور را وارد
+            می‌کند.
+          </li>
+          <li>میزبان درخواست اتصال را در ترمینال تأیید یا رد می‌کند.</li>
+          <li>
+            پس از تأیید، مهمان ترمینال میزبان را زنده تماشا می‌کند، در همان صفحه چت می‌کند، و در
+            صورت تأیید مجدد میزبان می‌تواند موقتاً کنترل تایپ را بگیرد — کنترلی که میزبان هر لحظه
+            می‌تواند پس بگیرد.
+          </li>
+        </ul>
+      </section>
+    </main>
+    <footer>
+      لایسنس <a href="https://github.com/arazshah/rsynx/blob/main/LICENSE">MIT</a> ·
+      <a href="https://github.com/arazshah/rsynx">github.com/arazshah/rsynx</a>
+    </footer>
+  </body>
+</html>
