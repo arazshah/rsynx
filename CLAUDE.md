@@ -59,8 +59,10 @@ bun test                           # اجرای تمام تست‌ها (bun:test
 bun run typecheck                  # tsc --noEmit روی کل ریپازیتوری
 bun run --cwd apps/relay dev       # اجرای relay در حالت dev
 bun run --cwd apps/cli dev         # اجرای cli در حالت dev
+bun run --cwd apps/web dev         # اجرای web (صفحهٔ فرود + /i) در حالت dev
 bun run dev:relay                  # میان‌بر همان دستور بالا از ریشه
 bun run dev:cli                    # میان‌بر همان دستور بالا از ریشه
+bun run dev:web                    # میان‌بر همان دستور بالا از ریشه
 bun run build:cli                  # ساخت باینری standalone برای cli
 ```
 

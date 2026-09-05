@@ -5,6 +5,7 @@
   "scripts": {
     "dev:relay": "bun run --cwd apps/relay dev",
     "dev:cli": "bun run --cwd apps/cli dev",
+    "dev:web": "bun run --cwd apps/web dev",
     "build:cli": "bun run --cwd apps/cli build",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
