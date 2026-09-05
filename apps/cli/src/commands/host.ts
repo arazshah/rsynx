@@ -1,4 +1,5 @@
 import { generatePassphrase, generateSessionId } from "@rsynx/protocol";
+import { RelayClient } from "../relay-client";
 
 const BOLD = "\x1b[1m";
 const CYAN = "\x1b[36m";
@@ -16,6 +17,26 @@ export async function runHost(): Promise<void> {
   console.log(`  Passphrase:    ${BOLD}${GREEN}${passphrase}${RESET}`);
   console.log("  ───────────────────────────────");
   console.log("  Share both values with your guest out of band (voice, chat, ...).");
-  console.log("  Waiting for a guest to join... (relay connection not implemented yet)");
   console.log();
+
+  await new Promise<void>((resolve, reject) => {
+    const client = new RelayClient(sessionId, "host", {
+      onPeerJoined: (role) => {
+        console.log(`  Guest connected (role: ${role}). Waiting for join-request... (not implemented yet)`);
+        client.close();
+        resolve();
+      },
+      onSessionExpired: (reason) => {
+        console.log(`  Session expired: ${reason}`);
+        client.close();
+        resolve();
+      },
+      onClose: () => resolve(),
+    });
+
+    client
+      .waitUntilOpen()
+      .then(() => console.log("  Connected to relay. Waiting for a guest to join..."))
+      .catch(reject);
+  });
 }
