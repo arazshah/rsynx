@@ -1,0 +1,23 @@
+{
+  "name": "@rsynx/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "rsynx": "src/index.ts"
+  },
+  "dependencies": {
+    "@rsynx/protocol": "workspace:*",
+    "@xterm/headless": "^6.0.0",
+    "neo-blessed": "^0.2.0"
+  },
+  "scripts": {
+    "dev": "bun src/index.ts",
+    "build": "bun build --compile --minify src/index.ts --outfile dist/rsynx",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/blessed": "^0.1.27"
+  }
+}
