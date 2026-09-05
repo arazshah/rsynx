@@ -1,0 +1,12 @@
+{
+  "name": "rsynx",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev:relay": "bun run --cwd apps/relay dev",
+    "dev:cli": "bun run --cwd apps/cli dev",
+    "build:cli": "bun run --cwd apps/cli build",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  }
+}

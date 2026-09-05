@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Bun (legacy binary lockfile; the text bun.lock is committed)
+bun.lockb
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
