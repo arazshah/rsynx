@@ -98,6 +98,10 @@ export async function runHost(): Promise<void> {
     client
       .waitUntilOpen()
       .then(() => console.log("  Connected to relay. Waiting for a guest to join..."))
-      .catch(reject);
+      .catch(() => {
+        rl.close();
+        console.error("  Could not connect to the relay server. Check your network connection and try again.");
+        reject(new Error("relay connection failed"));
+      });
   });
 }

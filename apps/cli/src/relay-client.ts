@@ -15,6 +15,7 @@ export interface RelayClientEvents {
 export class RelayClient {
   private ws: WebSocket;
   private heartbeatTimer?: ReturnType<typeof setInterval>;
+  private opened = false;
 
   constructor(
     private readonly sessionId: string,
@@ -23,11 +24,19 @@ export class RelayClient {
   ) {
     const relayUrl = process.env.RSYNX_RELAY_URL ?? DEFAULT_RELAY_URL;
     this.ws = new WebSocket(`${relayUrl}/ws?session_id=${sessionId}&role=${role}`);
-    this.ws.onopen = () => this.startHeartbeat();
+    this.ws.onopen = () => {
+      this.opened = true;
+      this.startHeartbeat();
+    };
     this.ws.onmessage = (event) => this.handleMessage(String(event.data));
     this.ws.onclose = () => {
       this.stopHeartbeat();
-      this.events.onClose?.();
+      // A close before the socket ever opened is a connection failure, not a
+      // graceful disconnect -- let waitUntilOpen()'s rejection handle it
+      // instead of racing it to resolve the caller's session promise.
+      if (this.opened) {
+        this.events.onClose?.();
+      }
     };
   }
 

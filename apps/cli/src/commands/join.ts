@@ -96,6 +96,9 @@ export async function runJoin(sessionId: string | undefined): Promise<void> {
     client
       .waitUntilOpen()
       .then(() => console.log("  Connected to relay. Waiting for the host..."))
-      .catch(reject);
+      .catch(() => {
+        console.error("  Could not connect to the relay server. Check your network connection and try again.");
+        reject(new Error("relay connection failed"));
+      });
   });
 }
