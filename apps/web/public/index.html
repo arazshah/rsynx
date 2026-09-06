@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>rsynx — اشتراک‌گذاری زندهٔ ترمینال</title>
+    <title>rsynx — live terminal sharing</title>
     <style>
       :root {
         color-scheme: dark;
@@ -55,8 +55,6 @@
         margin: 0 0 32px;
       }
       pre {
-        direction: ltr;
-        text-align: left;
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 8px;
@@ -87,7 +85,6 @@
         padding: 16px 20px;
       }
       .steps code {
-        direction: ltr;
         display: inline-block;
         color: var(--accent);
       }
@@ -109,47 +106,47 @@
   <body>
     <header>
       <nav>
-        <a href="#how-it-works">نحوهٔ کار</a>
-        <a href="#install">نصب</a>
-        <a href="https://github.com/arazshah/rsynx" class="github-link">گیت‌هاب</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/arazshah/rsynx" class="github-link">GitHub</a>
       </nav>
       <h1>rsynx</h1>
       <p class="pitch">
-        اشتراک‌گذاری زندهٔ ترمینال بین دو نفر — بدون SSH، بدون IP عمومی، بدون تنظیم فایروال.
+        Live terminal sharing between two people — no SSH, no public IP, no firewall
+        configuration.
       </p>
     </header>
     <main>
       <section id="install">
-        <h2>نصب</h2>
+        <h2>Install</h2>
         <pre><code>curl -fsSL https://rsynx.ir/i | sh</code></pre>
         <p>
-          کاربران ویندوز می‌توانند باینری مناسب را دستی از
-          <a href="https://github.com/arazshah/rsynx/releases" class="github-link">صفحهٔ Releases</a>
-          دانلود کنند.
+          Windows users can manually download the right binary from the
+          <a href="https://github.com/arazshah/rsynx/releases" class="github-link">Releases page</a>.
         </p>
       </section>
       <section id="how-it-works">
-        <h2>نحوهٔ کار</h2>
+        <h2>How it works</h2>
         <ul class="steps">
           <li>
-            میزبان یک نشست جدید می‌سازد: <code>rsynx host</code> — یک کد شش‌رقمی و یک رمز عبور
-            چهار کاراکتری نمایش داده می‌شود.
+            The host creates a new session: <code>rsynx host</code> — a six-digit code
+            and a four-character password are displayed.
           </li>
           <li>
-            مهمان با همان کد وصل می‌شود: <code>rsynx join &lt;code&gt;</code> و رمز عبور را وارد
-            می‌کند.
+            The guest connects with that same code: <code>rsynx join &lt;code&gt;</code>
+            and enters the password.
           </li>
-          <li>میزبان درخواست اتصال را در ترمینال تأیید یا رد می‌کند.</li>
+          <li>The host approves or rejects the connection request in their terminal.</li>
           <li>
-            پس از تأیید، مهمان ترمینال میزبان را زنده تماشا می‌کند، در همان صفحه چت می‌کند، و در
-            صورت تأیید مجدد میزبان می‌تواند موقتاً کنترل تایپ را بگیرد — کنترلی که میزبان هر لحظه
-            می‌تواند پس بگیرد.
+            Once approved, the guest watches the host's terminal live, chats on the
+            same screen, and — if the host approves again — can temporarily take
+            typing control, which the host can revoke at any moment.
           </li>
         </ul>
       </section>
     </main>
     <footer>
-      لایسنس <a href="https://github.com/arazshah/rsynx/blob/main/LICENSE">MIT</a> ·
+      <a href="https://github.com/arazshah/rsynx/blob/main/LICENSE">MIT</a> licensed ·
       <a href="https://github.com/arazshah/rsynx">github.com/arazshah/rsynx</a>
     </footer>
   </body>

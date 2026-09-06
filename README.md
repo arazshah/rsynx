@@ -1,67 +1,71 @@
 # rsynx
 
-rsynx یک ابزار متن‌باز خط‌فرمان برای اشتراک‌گذاری زندهٔ ترمینال بین دو نفر است — چیزی شبیه
-AnyDesk اما برای ترمینال؛ بدون نیاز به SSH، بدون نیاز به IP عمومی، و بدون تنظیم فایروال.
+rsynx is an open-source command-line tool for live terminal sharing between two
+people — something like AnyDesk, but for the terminal; no SSH required, no public IP
+required, and no firewall configuration.
 
-![اجرای rsynx host در ترمینال](docs/assets/cli-screenshot.png)
+![Running rsynx host in the terminal](docs/assets/cli-screenshot.png)
 
-## ویژگی‌ها
+## Features
 
-- **بدون تنظیمات شبکه**: نه SSH، نه IP عمومی، نه port forwarding — فقط یک کد شش‌رقمی و یک
-  رمز عبور چهار کاراکتری.
-- **رمزنگاری سرتاسر (end-to-end)**: کلید رمزنگاری فقط در حافظهٔ دو طرف نشست وجود دارد؛ سرور
-  relay هرگز به محتوای پیام‌ها یا کلید دسترسی ندارد.
-- **تأیید صریح میزبان**: هیچ اتصالی، و هیچ انتقال کنترل تایپی، بدون تأیید مستقیم میزبان در
-  همان لحظه انجام نمی‌شود.
-- **چت داخل همان صفحه**: بدون نیاز به ابزار جانبی برای هماهنگی حین اشتراک‌گذاری.
-- **باینری standalone**: نصب با یک خط دستور، بدون نیاز به Node.js یا وابستگی جداگانه.
+- **No network setup**: no SSH, no public IP, no port forwarding — just a six-digit
+  code and a four-character password.
+- **End-to-end encryption**: the encryption key exists only in the memory of the two
+  session participants; the relay server never has access to message content or the
+  key.
+- **Explicit host approval**: no connection, and no transfer of typing control, ever
+  happens without the host's direct, in-the-moment approval.
+- **In-page chat**: no need for a separate tool to coordinate during a sharing session.
+- **Standalone binary**: install with a single command, no Node.js or separate
+  dependency required.
 
-## نصب
+## Installation
 
 ```bash
 curl -fsSL https://rsynx.ir/i | sh
 ```
 
-## استفاده
+## Usage
 
-میزبان یک نشست جدید می‌سازد:
+The host creates a new session:
 
 ```bash
 rsynx host
 ```
 
-یک کد شش‌رقمی و یک رمز عبور چهار کاراکتری نمایش داده می‌شود. طرف مقابل با همان کد وصل
-می‌شود:
+A six-digit code and a four-character password are displayed. The other side connects
+with that same code:
 
 ```bash
 rsynx join <code>
 ```
 
-بعد از وارد کردن رمز، میزبان درخواست اتصال را تأیید یا رد می‌کند. پس از تأیید، مهمان
-می‌تواند ترمینال میزبان را زنده تماشا کند، در همان صفحه چت کند، و در صورت تأیید مجدد
-میزبان، کنترل تایپ ترمینال را موقتاً بگیرد — کنترلی که میزبان هر لحظه می‌تواند پس بگیرد.
+After entering the password, the host approves or rejects the connection request. Once
+approved, the guest can watch the host's terminal live, chat on the same screen, and —
+if the host approves again — temporarily take typing control of the terminal, which
+the host can revoke at any moment.
 
-## ساختار پوشه‌ها
+## Folder structure
 
 ```
 rsynx/
 ├── apps/
-│   ├── cli/       ابزار خط‌فرمان (host/join، رابط TUI)
-│   ├── relay/     سرور واسط WebSocket (فقط فوروارد پیام‌های رمزشده)
-│   └── web/       سایت فرود و اسکریپت نصب
+│   ├── cli/       command-line tool (host/join, TUI)
+│   ├── relay/     WebSocket relay server (only forwards encrypted messages)
+│   └── web/       landing page and install script
 ├── packages/
-│   └── protocol/  رمزنگاری، مشتق‌سازی کلید، و تایپ‌های پیام مشترک
-├── docs/          مستندات از جمله SPEC.md
+│   └── protocol/  encryption, key derivation, and shared message types
+├── docs/          documentation, including SPEC.md
 └── .github/       CI/CD
 ```
 
-مستند کامل پروتکل ارتباطی در [`docs/SPEC.md`](docs/SPEC.md) قرار دارد.
+The full protocol specification lives in [`docs/SPEC.md`](docs/SPEC.md).
 
-## مشارکت
+## Contributing
 
-Pull request ها خوش‌آمدند. لطفاً قبل از تغییرات بزرگ یک issue باز کنید تا دربارهٔ رویکرد
-هماهنگ شویم.
+Pull requests are welcome. Please open an issue before large changes so we can align
+on the approach.
 
-## لایسنس
+## License
 
-MIT — به [`LICENSE`](LICENSE) نگاه کنید.
+MIT — see [`LICENSE`](LICENSE).
