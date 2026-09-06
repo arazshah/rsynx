@@ -58,7 +58,7 @@ export async function runHostSession(params: {
   tui.repaint(xterm);
 
   function repaintChat(): void {
-    tui.setChatContent(chat.renderContent());
+    tui.setChatContent(chat.renderContent(tui.chatContentHeight));
     if (chat.isOpen()) tui.showChat();
     else tui.hideChat();
     updateStatus();

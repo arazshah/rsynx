@@ -19,6 +19,8 @@ export interface Tui {
   /** Raw bytes typed into the real terminal, before blessed's own key-name parsing. */
   onRawInput(handler: (chunk: Buffer) => void): void;
   onResize(handler: (cols: number, rows: number) => void): void;
+  /** Rows actually available inside the chat box right now (border excluded). */
+  chatContentHeight: number;
   setChatContent(text: string): void;
   showChat(): void;
   hideChat(): void;
@@ -116,6 +118,10 @@ export function createTui(): Tui {
     },
     onResize(handler) {
       screen.on("resize", () => handler(screen.cols, screen.rows - 1));
+    },
+    get chatContentHeight() {
+      // The box has a 1-row border on each side (border: { type: "line" }).
+      return Math.max(1, (chatBox.height as number) - 2);
     },
     setChatContent(text) {
       chatBox.setContent(text);
