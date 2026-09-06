@@ -42,6 +42,21 @@ export function createTui(): Tui {
   // needs for screen layout (see file header comment).
   const screen = Screen({ smartCSR: true, title: "rsynx", terminal: "xterm" });
 
+  // neo-blessed only enables raw mode as a side effect of attaching a
+  // 'keypress'/'mouse' listener to Program (see its newListener hook in
+  // program.js) -- listening on program.input's "data" event directly, as
+  // onRawInput below does, never triggers that hook. Without raw mode the
+  // tty stays in canonical/cooked mode: input is buffered until Enter and
+  // locally echoed by the terminal itself, so single-key controls
+  // (Ctrl+R/G/T) never fire and typed characters don't reach the pty until
+  // a full line is submitted. Enable it explicitly instead of relying on
+  // that side effect.
+  const input = screen.program.input as NodeJS.ReadStream;
+  if (input.setRawMode && !input.isRaw) {
+    input.setRawMode(true);
+    input.resume();
+  }
+
   const terminalBox = Box({
     top: 0,
     left: 0,
