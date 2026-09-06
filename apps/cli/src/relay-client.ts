@@ -1,6 +1,6 @@
 import type { PeerRole, RelayMessageType } from "@rsynx/protocol";
 
-const DEFAULT_RELAY_URL = "ws://localhost:8080";
+const DEFAULT_RELAY_URL = "wss://rsynx.ir";
 const HEARTBEAT_INTERVAL_MS = 15_000;
 
 export interface RelayClientEvents {
