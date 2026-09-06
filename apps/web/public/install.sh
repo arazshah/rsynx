@@ -41,8 +41,29 @@ echo "rsynx installed to $INSTALL_DIR/rsynx"
 case ":$PATH:" in
   *":$INSTALL_DIR:"*) ;;
   *)
+    export_line="export PATH=\"$INSTALL_DIR:\$PATH\""
+    updated=""
+
+    add_to_rc() {
+      rc="$1"
+      [ -f "$rc" ] || return 1
+      if ! grep -qF "$export_line" "$rc" 2>/dev/null; then
+        printf '\n# added by the rsynx installer\n%s\n' "$export_line" >> "$rc"
+      fi
+      updated="$updated $rc"
+    }
+
+    case "$(basename "${SHELL:-}")" in
+      zsh) add_to_rc "$HOME/.zshrc" || true ;;
+      bash) add_to_rc "$HOME/.bashrc" || add_to_rc "$HOME/.bash_profile" || true ;;
+    esac
+    # .profile is read by login shells across bash/dash/sh and is a safe
+    # fallback so PATH is fixed even if $SHELL doesn't match a case above.
+    add_to_rc "$HOME/.profile" || { touch "$HOME/.profile" && add_to_rc "$HOME/.profile"; }
+
     echo ""
-    echo "Add it to your PATH:"
-    echo "  export PATH=\"$INSTALL_DIR:\$PATH\""
+    echo "Added rsynx to your PATH in:$updated"
+    echo "Start a new shell, or run this now:"
+    echo "  $export_line"
     ;;
 esac
