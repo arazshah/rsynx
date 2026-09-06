@@ -243,3 +243,78 @@ Each client must send a `heartbeat` every 15–20 seconds so it doesn't simply s
 - **Never** log payload content (encrypted or decrypted) — logs contain only the
   session-id, the message type (the relay-level `type`, or simply "a user-level
   message arrived" without details for encrypted messages), and the timestamp.
+
+## 10. File transfer (draft — not yet implemented)
+
+Either side can send a file to the other. It reuses the existing per-message
+AES-256-GCM user-level envelope (section 4) — no new crypto surface — and follows the
+same explicit-approval pattern as `join-request` (section 2, step 12): a file never
+starts transferring without the receiving side's Y/n confirmation.
+
+### 10.1 Message types
+
+| type | direction | `payload` |
+|---|---|---|
+| `file-offer` | either side | `{ "transfer_id": "uuid", "filename": "string", "size": number, "sha256": "hex" }` |
+| `file-accept` | either side | `{ "transfer_id": "uuid" }` |
+| `file-reject` | either side | `{ "transfer_id": "uuid", "reason"?: "declined" \| "too-large" \| "busy" }` |
+| `file-chunk` | either side | `{ "transfer_id": "uuid", "seq": number, "data": "base64-raw-bytes" }` |
+| `file-complete` | either side | `{ "transfer_id": "uuid" }` |
+| `file-cancel` | either side | `{ "transfer_id": "uuid", "reason"?: "user-cancelled" \| "error" }` |
+
+`sha256` is computed over the whole file before the first chunk is sent, and lets the
+receiver verify integrity after reassembly without trusting the relay or the network
+path — nothing new here (the relay already can't see any of this; it's the same
+opaque `ciphertext` as every other user-level message).
+
+### 10.2 Flow
+
+1. The sender reads the file size and computes its `sha256` locally, generates a
+   `transfer_id` (UUID v4), and sends `file-offer`.
+2. If a transfer is already in progress in either direction, the receiver
+   auto-responds with `file-reject` (`reason: "busy"`) — v1 supports one active
+   transfer at a time, to keep chunk sequencing and the progress UI simple.
+3. Otherwise the receiving side is prompted (matching the join-request Y/n UX):
+   `<peer> wants to send "<filename>" (<size>). Accept? [Y/n]`. Files above the size
+   cap (10.4) are auto-rejected with `reason: "too-large"` before the prompt is shown.
+4. On `file-accept`, the sender streams the file as a sequence of `file-chunk`
+   messages (10.3), each carrying a monotonically increasing `seq` starting at 0.
+   Ordering is already guaranteed by the underlying WebSocket/TCP stream; `seq` is a
+   receiver-side sanity check, not a reordering mechanism.
+5. After the last chunk, the sender sends `file-complete`. The receiver reassembles
+   the chunks, verifies the result's SHA-256 against the `file-offer`'s `sha256`, and
+   reports success or a checksum-mismatch error locally — nothing is sent back over
+   the wire for this (the sender already knows it sent everything it read).
+6. Either side can send `file-cancel` at any point before `file-complete`; the other
+   side discards any buffered chunks for that `transfer_id` immediately.
+7. There is no resume support in v1 — a cancelled or connection-dropped transfer must
+   be restarted from `file-offer`.
+
+### 10.3 Chunking
+
+- Chunk size: 48 KiB of raw file bytes per `file-chunk` (before base64, which inflates
+  it to ~64 KiB) — comfortably inside a single WebSocket frame with headroom for the
+  JSON envelope and encryption overhead.
+- Chunks are read and sent as fast as the WebSocket send buffer allows; there's no
+  separate flow-control message type since TCP backpressure (the OS socket buffer)
+  already throttles the sender if the relay or receiver falls behind.
+
+### 10.4 Limits and defaults
+
+- Default max file size: 200 MiB. Above this, `file-offer` is auto-rejected with
+  `reason: "too-large"` without prompting the receiving user. Configurable via
+  `RSYNX_MAX_FILE_SIZE` (bytes) on the receiving side.
+- Default save location on accept: `~/Downloads` if it exists, else `$HOME`.
+  Configurable via `RSYNX_DOWNLOAD_DIR`. A filename collision gets a `-1`, `-2`, ...
+  suffix before the extension — an existing file is never overwritten silently.
+
+### 10.5 UI
+
+No new hotkey. Reuses the chat overlay (`Ctrl+T`) as a command line: typing
+`/send <path>` in the compose line sends that file instead of a chat message;
+`/cancel` cancels the transfer currently in progress. This avoids a second modal
+input mode and a new keybinding to document, at the cost of the path having to be
+typed out (no file picker — consistent with this project having no UI framework, per
+CLAUDE.md's "Bun only, no framework" rule extended in spirit to the TUI). Progress
+(`sending report.pdf: 42%`) replaces the status bar's control-state text for the
+duration of the transfer.
