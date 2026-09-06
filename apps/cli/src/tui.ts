@@ -32,7 +32,15 @@ export function createTui(): Tui {
   // "data" listener never receives bytes even though it's attached correctly.
   process.stdin.resume();
 
-  const screen = Screen({ smartCSR: true, title: "rsynx" });
+  // Force the plain "xterm" terminfo profile rather than trusting $TERM.
+  // In the bun-compiled binary, neo-blessed's fallback terminfo lookup uses
+  // __dirname, which bakes in the CI build machine's absolute path and
+  // crashes with ENOENT on any other machine. Any TERM value not covered by
+  // the user's local terminfo database (e.g. a terminal emulator's own
+  // xterm-<name> variant) would otherwise hit that broken fallback. "xterm"
+  // is present in essentially every terminfo database and is all this UI
+  // needs for screen layout (see file header comment).
+  const screen = Screen({ smartCSR: true, title: "rsynx", terminal: "xterm" });
 
   const terminalBox = Box({
     top: 0,
